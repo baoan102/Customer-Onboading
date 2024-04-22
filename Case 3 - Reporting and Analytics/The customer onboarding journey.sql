@@ -1,0 +1,108 @@
+--------------------------------------------- 1. Performance of Marketing Campaign--------------------------------------------------------
+--- 1.1. The customer onboarding journey
+----- 1.1.1. Advertising Performance Report
+SELECT C.CRM_Source
+	,C.CRM_Channel
+	, COUNT(C.Click_Ads_DT) CLICK
+	, COUNT(C.Install_App_DT) INSTALL 
+	, COUNT(E.eKYC_ID) EKYC
+	, COUNT(F.CUSTOMER_ID) CUSTOMERS
+	, COUNT(A.Account_Created_DT) ACCOUNT
+	, COUNT(F.FIRST_TRANS) FIRST_TRANS
+	, COUNT(IIF(DATEDIFF(MONTH, T.LAST_TRANS,'20230126' )<=2,1,NULL)) TRANS_IN_2_MONTHS
+FROM DIM_CRM C LEFT JOIN DIM_EKYC E ON C.eKYC_ID = E.eKYC_ID
+	LEFT JOIN (SELECT Customer_ID, MAX(Transaction_DT) LAST_TRANS
+				FROM DIM_TRANSACTIONS
+				GROUP BY Customer_ID) T ON T.Customer_ID = E.Customer_ID
+	LEFT JOIN DIM_ACCOUNTS A ON A.Customer_ID = E.Customer_ID
+	LEFT JOIN FACT_DIGITAL_PROFILES F ON F.Customer_ID = E.Customer_ID
+GROUP BY C.CRM_Source, C.CRM_Channel;
+
+----- Service Level Agreements:
+
+WITH N AS (
+	SELECT *
+		, COUNT(F.Customer_ID) OVER(PARTITION BY F.CRM_Channel, F.CRM_Source) NUM_OF_CUS
+	FROM FACT_DIGITAL_PROFILES F
+	WHERE YEAR(F.eKYC_DT) = '2022'
+)
+,SUB_TB AS (
+	SELECT CRM_Source
+		,CRM_Channel
+		, NUM_OF_CUS
+		, MONTH(T.Transaction_DT) SUBSEQUENT
+	FROM N
+		LEFT JOIN (SELECT * FROM DIM_TRANSACTIONS WHERE YEAR(Transaction_DT)= '2022') T
+		ON T.Customer_ID = N.Customer_ID
+)
+,CUS_MAKE_FIRST_TRANS AS (
+	SELECT S.*
+		,FORMAT(COUNT(SUBSEQUENT) OVER (PARTITION BY CRM_Channel, CRM_Source, NUM_OF_CUS,SUBSEQUENT)*1.0/NUM_OF_CUS,'p')  NUM_OF_CUS_MAKE_FIRST_TRANS
+		--,COUNT(SUBSEQUENT) OVER (PARTITION BY CRM_Channel, CRM_Source, NUM_OF_CUS,SUBSEQUENT)*1.0/NUM_OF_CUS  NUM_OF_CUS_MAKE_FIRST_TRANS
+	FROM SUB_TB S
+)
+SELECT CRM_Source, CRM_Channel ,NUM_OF_CUS, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12]
+FROM (
+	SELECT CRM_Source, CRM_Channel,NUM_OF_CUS,SUBSEQUENT,NUM_OF_CUS_MAKE_FIRST_TRANS
+	FROM CUS_MAKE_FIRST_TRANS
+) AS N
+PIVOT(
+	MIN(NUM_OF_CUS_MAKE_FIRST_TRANS)
+	FOR SUBSEQUENT IN ([1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12])) pivot_table
+ORDER BY CRM_Source, CRM_Channel;
+
+----- SLAs Report (by Phases)
+WITH N AS (
+	SELECT C.CRM_Source
+		, C.CRM_Channel
+		, C.App_ID
+		, COUNT(F.Customer_ID) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) NUM_OF_CUS
+
+		, DATEDIFF(DAY,'20220101',c.Click_Ads_DT) SLA_CLICK
+		, SUM(IIF(c.Click_Ads_DT IS NOT NULL,1,0)) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) TOTAL_CLICK
+
+		, DATEDIFF(DAY, '20220101', C.Install_App_DT) SLA_INSTALL
+		, SUM(IIF(C.Install_App_DT IS NOT NULL,1,0)) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) TOTAL_INSTALL
+
+		, DATEDIFF(DAY, '20220101', E.eKYC_DT) SLA_EKYC
+		, SUM(IIF(E.eKYC_DT IS NOT NULL,1,0)) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) TOTAL_EKYC
+
+		, DATEDIFF(DAY, '20220101', Account_Created_DT) SLA_ACC
+		, SUM(IIF(Account_Created_DT IS NOT NULL,1,0)) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) TOTAL_ACC
+
+		, DATEDIFF(DAY, '20220101', FIRST_TRANS) SLA_TRANS
+		, SUM(IIF(FIRST_TRANS IS NOT NULL,1,0)) OVER (PARTITION BY C.CRM_Source, C.CRM_Channel) TOTAL_F_TRANS
+
+	FROM DIM_CRM C
+		LEFT JOIN DIM_EKYC E  ON C.eKYC_ID=E.eKYC_ID
+		LEFT JOIN FACT_DIGITAL_PROFILES F ON E.Customer_ID=F.Customer_ID
+)
+SELECT CRM_Source
+	, CRM_Channel
+	, COUNT(*)
+	, COUNT(*)*1.0/TOTAL_EKYC
+FROM N
+WHERE SLA_EKYC<=180
+GROUP BY CRM_Source, CRM_Channel,TOTAL_EKYC
+ORDER BY CRM_Source;
+
+--- 1.1.2. Latency Between Phases Report:
+
+SELECT C.CRM_Source
+	,C.CRM_Channel
+	, AVG(DATEDIFF(DAY,C.Click_Ads_DT,C.Install_App_DT)) AVG_LAT_of_Click_TO_Install
+	, AVG(DATEDIFF(DAY,C.Install_App_DT,E.eKYC_DT)) AVG_LAT_of_Install_TO_eKYC 
+	, AVG(DATEDIFF(DAY,E.eKYC_DT,A.Account_Created_DT)) AVG_LAT_of_eKYC_to_create_Acc
+	, AVG(DATEDIFF(DAY,A.Account_Created_DT,F.FIRST_TRANS)) AVG_LAT_of_Create_Acc_to_Trans
+	, AVG(DATEDIFF(DAY,'20220101',C.Install_App_DT)) AVG_LAT_of_Install
+	, AVG(DATEDIFF(DAY,'20220101',E.eKYC_DT)) AVG_LAT_of_eKYC 
+	, AVG(DATEDIFF(DAY,'20220101',A.Account_Created_DT)) AVG_LAT_of_create_Acc
+	, AVG(DATEDIFF(DAY,'20220101',F.FIRST_TRANS)) AVG_LAT_of_Trans
+FROM DIM_CRM C LEFT JOIN DIM_EKYC E ON C.eKYC_ID = E.eKYC_ID
+	LEFT JOIN (SELECT Customer_ID, MAX(Transaction_DT) LAST_TRANS
+				FROM DIM_TRANSACTIONS
+				GROUP BY Customer_ID) T ON T.Customer_ID = E.Customer_ID
+	LEFT JOIN DIM_ACCOUNTS A ON A.Customer_ID = E.Customer_ID
+	LEFT JOIN FACT_DIGITAL_PROFILES F ON F.Customer_ID = E.Customer_ID
+GROUP BY C.CRM_Source, C.CRM_Channel;
+

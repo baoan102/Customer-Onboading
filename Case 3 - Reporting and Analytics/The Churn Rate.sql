@@ -1,0 +1,29 @@
+---2.4. The Churn Rate/ Turn-over rate
+WITH M AS (
+	SELECT DISTINCT CRM_Source,CRM_Channel
+		, F.Customer_ID
+		, DATEDIFF(MONTH, eKYC_DT, FIRST_TRANS) MONTH_TO_FIRST_TRANS
+		, DATEDIFF(MONTH,FIRST_TRANS,IIF((ROW_NUMBER() OVER(PARTITION BY T.Customer_ID 
+															ORDER BY Transaction_DT ASC))=2,Transaction_DT, NULL)) FST_TO_SND
+		, DATEDIFF(MONTH,F.FIRST_TRANS,
+					MAX(Transaction_DT) OVER (PARTITION BY T.Customer_ID)) LIFE_SPAN
+	FROM FACT_DIGITAL_PROFILES F LEFT JOIN DIM_TRANSACTIONS T ON F.Customer_ID=T.Customer_ID
+	WHERE F.FIRST_TRANS IS NOT NULL
+)
+,N AS (
+	SELECT CRM_Source,CRM_Channel, Customer_ID
+		, MAX(MONTH_TO_FIRST_TRANS) MONTH_TO_FIRST_TRANS
+		, MAX(FST_TO_SND) FST_TO_SND
+		, MAX (LIFE_SPAN) LIFE_SPAN
+	FROM M
+	GROUP BY CRM_Source,CRM_Channel, Customer_ID
+)
+SELECT CRM_Source,CRM_Channel
+	, AVG(LIFE_SPAN) AVG_LIFE_SPAN
+	, COUNT(Customer_ID) CUS_CNT
+	, SUM(IIF(MONTH_TO_FIRST_TRANS<3,1,0))*1.0/COUNT(Customer_ID) [3 month to first trans]
+	, SUM(IIF(FST_TO_SND <1,1,0))*1.0/SUM(IIF(MONTH_TO_FIRST_TRANS<3,1,0)) [Trans in 1 month after first trans]
+	, SUM(IIF(LIFE_SPAN>=6,1,0))*1.0/SUM(IIF(FST_TO_SND <1,1,0)) [Trans in 6 months after first trans]
+FROM N
+GROUP BY CRM_Source,CRM_Channel
+ORDER BY CRM_Source

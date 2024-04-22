@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="DESKTOP-MT8URLR_BAOAN17.DWH"
+  DTS:DTSID="{42DDAEC7-185F-4966-83D4-FCB3F945F92F}"
+  DTS:CreationName="OLEDB">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectRetryCount="1"
+      DTS:ConnectRetryInterval="5"
+      DTS:ConnectionString="Data Source=DESKTOP-MT8URLR\BAOAN17;Initial Catalog=DWH;Provider=SQLNCLI11.1;Integrated Security=SSPI;Application Name=SSIS-ETL Customer Onboarding data-{42DDAEC7-185F-4966-83D4-FCB3F945F92F}DESKTOP-MT8URLR\BAOAN17.DWH;Auto Translate=False;" />
+  </DTS:ObjectData>
+</DTS:ConnectionManager>
