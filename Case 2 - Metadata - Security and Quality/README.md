@@ -118,12 +118,13 @@ SELECT e.[eKYC_DT], e.[Customer_ID]
 
 # 5. Data quality:
 ## 5.1. Data Accuracy Report:
-- 	Write a query with the following fields:
- - `IS_TIME_ALERT`: Evaluate the timestamps when customers perform actions to determine if they are reasonable (click -> install -> eKYC -> Account Created -> First Transaction).
- - `IS_SCORE_ALERT`: Customers have completed KYC, but their scores do not meet the required criteria.
- - `IS_ONFO_ALERT`: Customers have completed KYC, but the data from OCR does not match the data entered by the customers.
- - `IS_CATEGORY_ALERT`: Customer accounts are not of type 1001 and 1002.
- - `Fraud_Type`: Classification of customers
+
+Write a query with the following fields:
+- `IS_TIME_ALERT`: Evaluate the timestamps when customers perform actions to determine if they are reasonable (click -> install -> eKYC -> Account Created -> First Transaction).
+- `IS_SCORE_ALERT`: Customers have completed KYC, but their scores do not meet the required criteria.
+- `IS_ONFO_ALERT`: Customers have completed KYC, but the data from OCR does not match the data entered by the customers.
+- `IS_CATEGORY_ALERT`: Customer accounts are not of type 1001 and 1002.
+- `Fraud_Type`: Classification of customers
 
 ```sql
 select F.Customer_ID
