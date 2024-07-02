@@ -13,26 +13,28 @@ Represents the accounts created by customers during the digital onboarding proce
 Represents the digital financial transactions conducted by customers. With Transaction details such as transaction ID, timestamp, amount, type, and associated account and customer information.
 
 # 3. Customer journey analysis:
-![alt text](image.png)
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/2b99ad48-d671-4cb4-8bb7-5a21353f6b4b)
 
 ## 3.1. Application Form:
 
 First, customers download the bank's application and fill in all the initial required information fields. Customers can choose the document they want to verify, such as Citizen Identification Card/ Passport. Then, they take clear photos of both sides of the document.
 
 ## 3.2. Verification:
- ![alt text](image-1.png)
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/d9892039-dc05-415f-af08-a2bc601c0869)
 
 The algorithms will compare the Citizen Identification Card/ Passport photos taken by the customer with the information they have edited to check for consistency.
 
 In this process, the data warehouse will track the status of the eKYC process for each customer, including collecting information about the eKYC verification progress, such as pending, verified, or rejected. Capturing the eKYC status must be timestamped to maintain a historical record.
 
 ## 3.3. Account Creation:
-After the successful verification process, the customer will have their account created. During this process, the data warehouse will track whether the customer has successfully created an account. This information must be updated in real-time and include details such as the account creation time, linked account information, and customer details.
+After the successful verification process, the customer will have their account created. During this process, the data warehouse will track whether the customer has successfully created an account. This information must be updated in real time and include details such as the account creation time, linked account information, and customer details.
 
 ## 3.4. Transaction:
 Currently, at most banks, once customers successfully create an account, they are usually allowed to perform basic transactions immediately. However, these transactions will be limited to a certain threshold.
 
-The data warehouse will track customer transaction behavior. This involves capturing the transaction time, transaction details, and linking it to the relevant customer and account.
+The data warehouse will track customer transaction behavior. This involves capturing the transaction time, transaction details, and linking them to the relevant customer and account.
 
 # 4. Data sources:
 |Source|Description|
@@ -47,9 +49,9 @@ The data warehouse will track customer transaction behavior. This involves captu
 
 For easier management, I use a 3-tier architecture for the Data Warehouse to separate and organize the main components of the system. This architecture includes three layers: Source layer, Reconciled layer, and Data Warehouse layer.
 
-![alt text](image-2.png)
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/b10e5312-a4e0-4c5a-a0ec-fef5179091a4)
 
-## 5.1. Sourse layer:
+## 5.1. Source layer:
 
 You can refer to the data source description in Table 4.1. This layer includes a data warehouse server. The task of this layer is to collect, clean, and transform data from various sources.
 
@@ -59,7 +61,7 @@ The data from the Source layer, after undergoing the Data Staging process where 
 ## 5.3. Data warehouse layer:
 Including querying tools, reporting, analysis, and data mining.
 
-# 6. Build Data warehouse Model:
+# 6. Build Data Warehouse Model:
 
 |Table|	Description|
 |---------|-----------|
