@@ -106,11 +106,15 @@ SELECT e.[eKYC_DT], e.[Customer_ID]
 - Data type conflicts:
   - During the data loading process from CORE_T24 into the table [STAGING Digital Transaction], a data type conflict arises because the input data (CORE_T24) in the Transaction_Range column is of type String, while the Transaction_Range column in the STAGING Digital Transaction table in the database is of type nvarchar. Therefore, it's necessary to convert the input data to Unicode string [DT_WSTR].
 
-  ![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/5dbfeaab-cced-4775-949f-df2e517fc9a4)
+<p align="center">
+  <img src="https://github.com/baoan102/Customer-Onboading/assets/154876263/5dbfeaab-cced-4775-949f-df2e517fc9a4" width="230" >
+</p>
 
  - During the data loading process from an Excel file into the table [STAGING_Post_eKYC_Information], the input data type for the IS_KYC column is String. However, in the database, its data type is varchar, which means ASCII. Therefore, it's necessary to change the code page for the Data Conversion from 1258 to 1252.
 
-![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/6939ee02-3e8a-462e-a9c5-094b659ccdaa)
+<p align="center">
+  <img src="https://github.com/baoan102/Customer-Onboading/assets/154876263/6939ee02-3e8a-462e-a9c5-094b659ccdaa" width="230" >
+</p>
 
 # 5. Data quality:
 ## 5.1. Data Accuracy Report:
