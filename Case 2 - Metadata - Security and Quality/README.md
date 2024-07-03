@@ -22,85 +22,14 @@ Please refer to the Excel file ([Source-Targer Mapping](https://github.com/baoan
 
 In addition to the one-to-one mapping tables, there are other tables that need to be filtered according to requirements:
 
--	 [dbo].[STAGING_eKYC_Information]:
-``` sql
-SELECT [eKYC_ID]
-      ,[eKYC_DT]
-      ,JSON_VALUE([OCR_INFO],'$.name') [OCR_Name]
-	  ,JSON_VALUE([OCR_INFO],'$.dob') [OCR_Dob]
-	  ,JSON_VALUE([OCR_INFO],'$.gender') [OCR_Gender]
-	  ,JSON_VALUE([OCR_INFO],'$.nationality') [OCR_Nationality]
-	  ,JSON_VALUE([OCR_INFO],'$.address') [OCR_Address]
-	  ,JSON_VALUE([INPUT_INFO],'$.name') [INPUT_Name]
-	  ,JSON_VALUE([INPUT_INFO],'$.dob') [INPUT_Dob]
-	  ,JSON_VALUE([INPUT_INFO],'$.gender') [INPUT_Gender]
-	  ,JSON_VALUE([INPUT_INFO],'$.address') [INPUT_Address]
-	  ,JSON_VALUE([INPUT_INFO],'$.nationality') [INPUT_Nationality]
-      ,CAST([SANITY_SCORE] AS decimal(3,2)) [SCORE_Sanity]
-	  ,CAST([SANITY_SCORE] AS decimal(3,2)) [SCORE_Tampering]
-	  ,CAST([SANITY_SCORE] AS decimal(3,2)) [SCORE_Liveness]
-	  ,CAST([SANITY_SCORE] AS decimal(3,2)) [SCORE_Matching]
-      ,[CUSTOMER_ID]
-FROM [ONBOARDING].[dbo].[ONBOARDING_Data]
-```
--	 [dbo].[STAGING_Digital_Account]:
-  ``` sql
-SELECT  [CREATED_DT]
-      ,[Transaction_Account]
-      ,[Account_Category]
-      ,[CUSTOMER_ID]
-      ,[ACCOUNT_STATUS]
-FROM [CORE_T24].[dbo].[T24_ACCOUNT]
-WHERE Account_Category in ('1001','1002')
-```
--	[dbo].[DIM_TRANSACTION_TYPE]:
-```sql
-SELECT  [Transaction_Type]
-      ,[Transaction_Group]
-FROM [CORE_T24].[dbo].[T24_TRANSACTION]
-GROUP BY  [Transaction_Type]
-      ,[Transaction_Group]
-```
--	[dbo].[STAGING_Digital_Account]
-```sql
- 	SELECT [Transaction_ID]
-      ,[Transaction_Account]
-      ,[CUSTOMER_ID]
-      --,[Channel]
-	  ,[Transaction_Amount]
-	  , IIF([Transaction_Amount] < 1000000, 'LOW'
-			, IIF([Transaction_Amount] < 10000000, 'MEDIUM LOW'
-				, IIF([Transaction_Amount] < 100000000, 'MEDIUM HIGH', 'HIGH')))   [Transaction_Range]
-	  ,[Transaction_DT]
-      ,[Transaction_Type]
-      ,[Transaction_Group]
-  FROM [CORE_T24].[dbo].[T24_TRANSACTION]
-  WHERE [Channel] = 'APP'
-```
--	[dbo].[FACT_DIGITAL_PROFILES]
-```sql
-SELECT e.[eKYC_DT], e.[Customer_ID]
-			, c.[CRM_Source], c.[CRM_Channel]
-			, a.[Account_Created_DT], a.[Account_Number], a.[Account_Category], a.[Account_Status]
-			, t.FIRST_TRANS, t.TRANS_CNT, t.TRANS_AMT
-			, p.[PosteKYC_created_DT]
-			, p.[Fraud_Type] 
-			, p.[KYC_DT] 
-			--, 
-	FROM [DWH].[dbo].[DIM_EKYC] e
-	LEFT JOIN [DWH].[dbo].[DIM_CRM] c on e.[eKYC_ID] = c.[eKYC_ID]
-	LEFT JOIN [DWH].[dbo].[DIM_ACCOUNTS] a on e.[Customer_ID] = a.[Customer_ID]
-	LEFT JOIN (SELECT [Customer_ID],[Account_Number]
-						, min([Transaction_DT]) FIRST_TRANS
-						, count(distinct [Transaction_ID]) TRANS_CNT
-						, sum([Transaction_Amount]) TRANS_AMT
-				FROM [DWH].[dbo].[DIM_TRANSACTIONS]
-				GROUP BY  [Customer_ID],[Account_Number]
-					) t on e.[Customer_ID] = t.[Customer_ID] 
-					AND a.[Account_Number] = t.[Account_Number]
-	LEFT JOIN [DWH].[dbo].[DIM_POST_EKYC] p on   e.[Customer_ID] = p.[Customer_ID]
-	WHERE e.[Customer_ID] IS NOT NULL
-```
+- [dbo].[STAGING_eKYC_Information]
+- [dbo].[STAGING_Digital_Account]
+- [dbo].[DIM_TRANSACTION_TYPE]
+- [dbo].[STAGING_Digital_Account]
+- [dbo].[FACT_DIGITAL_PROFILES]
+
+[Link to code](https://github.com/baoan102/Customer-Onboading/blob/main/Case%202%20-%20Metadata%20-%20Security%20and%20Quality/ETL_SQL_SCRIPTS.sql)
+
 ## 4.3. Some issues encountered during the data ETL process:
 
 - Data type conflicts:
@@ -126,24 +55,36 @@ Write a query with the following fields:
 - `IS_CATEGORY_ALERT`: Customer accounts are not of type 1001 and 1002.
 - `Fraud_Type`: Classification of customers
 
-```sql
-select F.Customer_ID
-	, IIF(C.Click_Ads_DT>C.Install_App_DT OR C.Click_Ads_DT > F.eKYC_DT OR C.Click_Ads_DT > F.Account_Created_DT OR C.Click_Ads_DT > F.FIRST_TRANS
-		OR C.Install_App_DT> F.eKYC_DT OR C.Install_App_DT > F.Account_Created_DT OR C.Install_App_DT > F.FIRST_TRANS
-		OR F.eKYC_DT > F.Account_Created_DT OR F.eKYC_DT > F.FIRST_TRANS
-		OR F.Account_Created_DT > F.FIRST_TRANS, 1,0) IS_TIME_ALERT
-	, IIF(E.[SCORE_Sanity] < 0.85  
-		OR E.[SCORE_Tampering] < 0.85 
-		OR E.[SCORE_Liveness] < 0.85 
-		OR E.[SCORE_Matching] < 0.85 , 1 , 0) IS_SCORE_ALERT
-	, IIF( [OCR_Name]<>[INPUT_Name]
-		OR [OCR_Dob] <> [INPUT_Dob]
-		OR [OCR_Gender] <> [INPUT_Gender]
-        OR [OCR_Address] <> [INPUT_Address]
-        OR [OCR_Nationality]<>[INPUT_Nationality],1,0) IS_INFO_ALERT
-	, IIF(F.Account_Category NOT IN ('1001','1002'),1,0) IS_CATEGORY_ALERT
-	, F.Fraud_Type
-FROM FACT_DIGITAL_PROFILES F
-LEFT JOIN DIM_EKYC E ON E.Customer_ID=F.Customer_ID
-LEFT JOIN DIM_CRM C ON C.eKYC_ID=E.eKYC_ID
-```
+[Link to code.](https://github.com/baoan102/Customer-Onboading/blob/main/Case%202%20-%20Metadata%20-%20Security%20and%20Quality/Data%20Accuracy.sql)
+
+With the data obtained from the query above and using an Excel Pivot Table, we have the following two tables :
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/9388577f-b480-4ff9-9b2f-9c5e90589698)
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/a5a374dc-a343-4869-a522-bc0eb29c867a)
+
+- Evaluate: 
+	 - Based on the report, we can observe that there are no violations in the IS_INFO_ALERT and IS_CATEGORY_ALERT fields, indicating consistency between OCR data and customer-entered data. Additionally, all customers have accounts belonging to categories 1001 and 1002.
+	 - However, for the IS_SCORE_ALERT and IS_TIME_ALERT fields, the number of customers violating these criteria is quite high, especially among customers labeled as NORMAL in the IS_SCORE_ALERT field, reaching up to 1504 customers. Therefore, it is necessary to review and verify this customer segment to prevent them from causing negative impacts on the bank. - 
+	 - Additionally, when calculating the percentage of customers relative to the total, the IS_SCORE_ALERT field also accounts for a relatively high proportion (4-5%). Therefore, it is essential to check whether the OCR system is functioning properly or if the criteria for scores are not appropriate.
+
+## 5.2. Data Consistency Report:
+- Create a report table with the following columns:
+	- `eKYC_MONTH`: month of eKYC execution
+	- `FRAUD_NOT_CLOSED`: customers flagged as Fraud but whose accounts are not closed
+	 - `RISK_NOT_SUSPENDED`: customers flagged as Risk but whose activities are not suspended or warned
+	 - `CHECK_NOT_ACTIVE`: normal customers whose accounts are not allowed to operate
+	 - `RISK_TRANS`: transactions performed by Risk-labeled customers that should have been restricted
+	 - `FRAUD_TRANS`: transactions performed by Fraud-labeled customers
+
+For the data obtained from the query above and using an Excel Pivot Table, we have the following report:
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/d79e8627-b09f-4234-8bae-660bfc51e743)
+
+Detail report on transactions by customers labeled as FRAUD:
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/7b441170-b95e-4966-b038-c2543e047159)
+
+
+
+
