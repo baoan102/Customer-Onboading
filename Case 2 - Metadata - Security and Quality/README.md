@@ -77,6 +77,8 @@ With the data obtained from the query above and using an Excel Pivot Table, we h
 	 - `RISK_TRANS`: transactions performed by Risk-labeled customers that should have been restricted
 	 - `FRAUD_TRANS`: transactions performed by Fraud-labeled customers
 
+[Link to code.](https://github.com/baoan102/Customer-Onboading/blob/main/Case%202%20-%20Metadata%20-%20Security%20and%20Quality/Data%20Consistancy.sql)
+
 For the data obtained from the query above and using an Excel Pivot Table, we have the following report:
 
 ![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/d79e8627-b09f-4234-8bae-660bfc51e743)
@@ -84,7 +86,3 @@ For the data obtained from the query above and using an Excel Pivot Table, we ha
 Detail report on transactions by customers labeled as FRAUD:
 
 ![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/7b441170-b95e-4966-b038-c2543e047159)
-
-
-
-
