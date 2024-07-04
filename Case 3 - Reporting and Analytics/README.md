@@ -68,8 +68,70 @@ Meaning of the fields:
 
 ![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/76b8596b-acd1-4d26-a848-3e397fbcf273)
 
+The chart of total profit and cost by source.
+
 ![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/62c25365-770a-440b-8c54-88a34fe020f6)
 
 From the Profit and Loss report and chart, we can see that for customers from the Ecosystem and Partnership channels, whether they transact or operate on their own platform, we incur significant costs. Specifically, for every dollar spent, we only gain about 10-12 dollars in profit. Therefore, it's crucial to regularly monitor these customers, possibly checking their churn rates.
 
 Meanwhile, the RB and Telesale channels are very cost-effective, especially RB, which performs exceptionally well in every aspect: highest ROI, lowest costs, and highest profit per customer. This reflects the reality that the RB channel leverages the bank's branch staff, which is a readily available resource with moderate costs.
+
+## 1.3. Customer Lifetime Value - CLV:
+### 1.3.1.  Preparation: 
+
+To calculate the customer lifetime value, I use the following formula: 
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/0ed7b0d7-5e08-4b18-8f3a-25ed2e094dd8)
+
+Create an additional table TMP_CUSTOMER_LIFETIME_REPORT in the Data Warehouse to show the customer lifetime value with the following fields:
+
+|Field|	Description|
+|--------|----------|
+|CRM_Source|	Source.|
+|CRM_Channel|	Channel.|
+|Customer_ID|	Customer ID.
+|TRANS_CNT|	The number of transactions conducted.|
+|TRANS_AMT|	The total value of transactions.|
+|LIFE_SPAN|	The age of the customer on the platform (from the first transaction to the last transaction).|
+|GPM|	Gross profit magin.|
+|APV|	The average value per transaction.|
+|CV|	Customer value.|
+|CLV|	Customer lifetime value.|
+
+`TMP_CUSTOMER_LIFETIME_REPORT` overview: 
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/621efe2d-1224-41d3-8567-acbddd9e8034)
+
+Create an additional temporary table `#JTB_APV` to calculate the difference between CLV and average CLV, with the following fields:
+
+|Field|	Description|
+|-------|--------------|
+|Customer_ID|	Customer ID|
+|CRM_Source|	Source.|
+|CRM_Channel|	Channel.|
+|AVG_OF_CLV|	Average CLV by channel.|
+|CLV	Customer| lifetime value|
+|DIF_TO_AVG	The difference between CLV and AVG_OF_CLV = CLV - AVG_OF_CLV.|
+|RANK_BY_SOURC|	Ranking CLV of each customer by source.|
+
+`#JTB_APV` overview:
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/e842b56c-c186-4c43-b22b-b723c15d1675)
+
+### 1.3.2. Analysis and evaluation:
+
+Average difference between customer value per source and average customer value:
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/bf537c52-99e6-41c6-961b-88422cd0e61b)
+
+We observe that most sources from the Digital Direct Sale channel have CLV lower than the average CLV. RB shows an insignificant CLV difference. However, customers from the Telesale channel stand out notably with remarkably high differences. This highlights that the Telesale channel is actively contributing significantly above the average CLV value.
+
+A chart depicting the distribution of customers by the difference between CLV and average CLV.
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/dccd5fdf-dbbc-4eae-9ae3-f5ab6c3ec9c7)
+
+We can see that a significant number of customers from all sources have AVG_OF_CLV < 0, especially notable in the RB and Telesale sources, which also have a large number of customers in the high segment. The presence of so many customers with AVG_OF_CLV < 0 has a very negative impact, lowering the average CLV and burdening higher-segment customers more. 
+
+## 1.4. Churn Rate report:
+
+![image](https://github.com/baoan102/Customer-Onboading/assets/154876263/c431a912-cceb-4ad0-bb09-ba8c05ba287b)
